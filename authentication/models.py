@@ -10,6 +10,10 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
+    def __init__(self, *args, **kwargs):
+        self.with_inactive = kwargs.pop('inactive', False)
+        super(BaseUserManager, self).__init__(*args, **kwargs)
+
     """
     Django requires that custom users define their own Manager class. By
     inheriting from `BaseUserManager`, we get a lot of the same code used by
@@ -46,6 +50,13 @@ class UserManager(BaseUserManager):
         user.save()
 
         return user
+
+    def get_queryset(self, *args, **kwargs):
+        qs = super(UserManager, self).get_queryset(*args, **kwargs)
+        if self.with_inactive:
+            return qs
+        else:
+            return qs.filter(is_active=True)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -89,6 +100,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Tells Django that the UserManager class defined above should manage
     # objects of this type.
     objects = UserManager()
+    all_objects = UserManager(inactive=True)
 
     def __str__(self):
         """
