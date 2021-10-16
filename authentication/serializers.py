@@ -1,8 +1,8 @@
-from rest_framework import serializers
 from django.contrib.auth import authenticate
+from django_restql.mixins import DynamicFieldsMixin
+from rest_framework import serializers
 
 from .models import User
-
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -24,7 +24,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         model = User
         # List all of the fields that could possibly be included in a request
         # or response, including fields specified explicitly above.
-        fields = ['email', 'username', 'password', 'token']
+        fields = ('id', 'email', 'username', 'password', 'token')
 
     def create(self, validated_data):
         # Use the `create_user` method we wrote earlier to create a new user.
@@ -32,6 +32,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     email = serializers.CharField(max_length=255)
     username = serializers.CharField(max_length=255, read_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
@@ -86,16 +87,17 @@ class LoginSerializer(serializers.Serializer):
         # This is the data that is passed to the `create` and `update` methods
         # that we will see later on.
         return {
+            'id': user.id,
             'email': user.email,
             'username': user.username,
             'token': user.token
         }
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
     """Handles serialization and deserialization of User objects."""
 
-    # Passwords must be at least 8 characters, but no more than 128 
+    # Passwords must be at least 8 characters, but no more than 128
     # characters. These values are the default provided by Django. We could
     # change them, but that would create extra work while introducing no real
     # benefit, so lets just stick with the defaults.
@@ -107,17 +109,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'token',)
+        fields = ('id', 'email', 'username', 'password', 'token',)
 
         # The `read_only_fields` option is an alternative for explicitly
         # specifying the field with `read_only=True` like we did for password
         # above. The reason we want to use `read_only_fields` here is that
         # we don't need to specify anything else about the field. The
-        # password field needed the `min_length` and 
+        # password field needed the `min_length` and
         # `max_length` properties, but that isn't the case for the token
         # field.
         read_only_fields = ('token',)
-
 
     def update(self, instance, validated_data):
         """Performs an update on a User."""
