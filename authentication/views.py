@@ -1,24 +1,44 @@
 
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .renderers import UserJSONRenderer
-from rest_framework.generics import RetrieveUpdateAPIView
 
-from .serializers import (
-    RegistrationSerializer, LoginSerializer, UserSerializer
-)
+from authentication.constants import MIN_PASSWORD_LENGTH
+from negantime.drf_utils import ApiRenderer, Response
+from rest_framework import status
+from rest_framework.decorators import (api_view, permission_classes,
+                                       renderer_classes)
+from rest_framework.exceptions import APIException, PermissionDenied
+from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+# from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from authentication.models import User
+
+from .renderers import UserJSONRenderer
+from .serializers import (LoginSerializer, RegistrationSerializer,
+                          UserSerializer)
 
 
 class RegistrationAPIView(APIView):
     # Allow any user (authenticated or not) to hit this endpoint.
+    renderer_classes = (ApiRenderer,)
     permission_classes = (AllowAny,)
     serializer_class = RegistrationSerializer
-    renderer_classes = (UserJSONRenderer,)
 
     def post(self, request):
         user = request.data.get('user', {})
+
+        username = user.get('username')
+        email = user.get('email')
+        password = user.get('password')
+
+        if User.all_objects.filter(username=username).count():
+            raise APIException("Username unavailable")
+
+        if User.all_objects.filter(email=email).count():
+            raise APIException("Account already exists")
+
+        if len(password) < MIN_PASSWORD_LENGTH:
+            raise APIException("Account already exists")
 
         # The create serializer, validate serializer, save serializer pattern
         # below is common and you will see it a lot throughout this course and
@@ -32,7 +52,7 @@ class RegistrationAPIView(APIView):
 
 class LoginAPIView(APIView):
     permission_classes = (AllowAny,)
-    renderer_classes = (UserJSONRenderer,)
+    renderer_classes = (ApiRenderer,)
     serializer_class = LoginSerializer
 
     def post(self, request):
@@ -45,24 +65,34 @@ class LoginAPIView(APIView):
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
 
 
 class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (UserJSONRenderer,)
+    permission_classes = (AllowAny,)
+    renderer_classes = (ApiRenderer,)
     serializer_class = UserSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        # There is nothing to validate or save here. Instead, we just want the
-        # serializer to handle turning our `User` object into something that
-        # can be JSONified and sent to the client.
-        serializer = self.serializer_class(request.user)
+        user = request.user
+        username = request.query_params.get('username')
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if username:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                raise APIException('Invalid user')
+
+        serializer = self.serializer_class(user)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
+        if not request.user:
+            raise PermissionDenied()
+
         serializer_data = request.data.get('user', {})
+        if serializer_data['id'] != request.user.id:
+            raise PermissionDenied()
 
         # Here is that serialize, validate, save pattern we talked about
         # before.
@@ -73,3 +103,14 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@renderer_classes([ApiRenderer, ])
+@permission_classes((IsAuthenticated,))
+def verify_token(request):
+    try:
+        res_data = UserSerializer(request.user).data
+        return Response(res_data, msg='Token verified successfully')
+    except Exception as err:
+        raise APIException("Invalid token")

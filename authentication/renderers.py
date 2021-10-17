@@ -21,7 +21,7 @@ class UserJSONRenderer(JSONRenderer):
         if errors is not None:
             # As mentioned above, we will let the default JSONRenderer handle
             # rendering errors.
-            return super(UserJSONRenderer, self).render(data)
+            return super(UserJSONRenderer, self).render({'data': {}, 'msg': errors['error'], 'status': False})
 
         if token is not None and isinstance(token, bytes):
             # Also as mentioned above, we will decode `token` if it is of type
@@ -29,6 +29,4 @@ class UserJSONRenderer(JSONRenderer):
             data['token'] = token.decode('utf-8')
 
         # Finally, we can render our data under the "user" namespace.
-        return json.dumps({ 'user': data })
-
-
+        return json.dumps({'data': data, 'msg': 'Success', 'status': True})

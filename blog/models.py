@@ -8,12 +8,12 @@ from negantime.models import BaseModel
 
 
 class Blog(BaseModel):
-    title = models.CharField(default='new', max_length=128)
+    title = models.CharField(default='', max_length=128)
     content = models.TextField(null=True, blank=True)
     images = ArrayField(models.CharField(
         max_length=2048), null=True, blank=True)
     author = models.ForeignKey(
-        User, null=True, on_delete=models.PROTECT, blank=True)
+        User,  on_delete=models.PROTECT)
 
     class Meta:
         db_table = 'blog'
