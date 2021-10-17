@@ -1,9 +1,12 @@
 
 from rest_framework import status
+from rest_framework.exceptions import APIException
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from authentication.models import User
 
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, RegistrationSerializer,
@@ -54,10 +57,21 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
     serializer_class = UserSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        # There is nothing to validate or save here. Instead, we just want the
-        # serializer to handle turning our `User` object into something that
-        # can be JSONified and sent to the client.
-        serializer = self.serializer_class(request.user)
+        user = request.user
+        username = request.query_params.get('username')
+
+        if username:
+            # return username
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response({'errors': {'error': []}}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.serializer_class(user)
+        else:
+            # There is nothing to validate or save here. Instead, we just want the
+            # serializer to handle turning our `User` object into something that
+            # can be JSONified and sent to the client.
+            serializer = self.serializer_class(user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

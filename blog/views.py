@@ -26,7 +26,7 @@ class BlogList(generics.ListCreateAPIView):
     def get_queryset(self):
         username = self.request.query_params.get('username')
         qs = super().get_queryset()
-        qs.filter(author__username=username)
+        qs = qs.filter(author__username=username)
         return qs
 
     def post(self, request):
@@ -39,6 +39,6 @@ class BlogList(generics.ListCreateAPIView):
 
 
 class BlogDetail(generics.RetrieveUpdateDestroyAPIView):
-    # renderer_classes = [ApiRenderer]
+    renderer_classes = [ApiRenderer]
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
