@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from authentication.constants import MIN_PASSWORD_LENGTH
 from django_restql.mixins import DynamicFieldsMixin
 from rest_framework import serializers
 
@@ -12,7 +13,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     # characters, and can not be read by the client.
     password = serializers.CharField(
         max_length=128,
-        min_length=8,
+        min_length=MIN_PASSWORD_LENGTH,
         write_only=True
     )
 
