@@ -1,15 +1,9 @@
-import copy
-import datetime
-import json
-from operator import attrgetter
 
-from authentication.models import User
-from authentication.serializers import UserSerializer
-from django.db.models import ExpressionWrapper, F, FloatField, Q, Sum
-from django_restql.mixins import DynamicFieldsMixin
 from rest_framework import serializers
+from django_restql.mixins import DynamicFieldsMixin
 
 from blog.models import Blog
+from authentication.serializers import UserSerializer
 
 
 class BlogSerializer(DynamicFieldsMixin, serializers.ModelSerializer):

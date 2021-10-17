@@ -1,14 +1,7 @@
-from django.db.models import F
-from django_filters import rest_framework as filters
 from rest_framework import generics
-from rest_framework.exceptions import APIException
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.utils import json
 from django.http import HttpResponse
-from authentication import serializers
-from negantime.renderers import ApiRenderer
+from negantime.drf_utils import ApiRenderer
 
 from .serializers import BlogSerializer
 from .models import *
