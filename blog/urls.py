@@ -19,6 +19,10 @@ from .views import *
 
 urlpatterns = [
     path('blog/', BlogList.as_view(), name='blog_list'),
+
+    path('blog/trending/', TrendingList.as_view(), name='blog_trending_list'),
+    path('blog/popular/', PopularList.as_view(), name='blog_popular_list'),
     path('blog/<int:pk>', BlogDetail.as_view(), name='blog_detail'),
+
     path('', index, name='blog')
 ]

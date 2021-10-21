@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, mixins
 from rest_framework.response import Response
 from django.http import HttpResponse
 from negantime.drf_utils import ApiRenderer
@@ -35,3 +35,21 @@ class BlogDetail(generics.RetrieveUpdateDestroyAPIView):
     renderer_classes = [ApiRenderer]
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
+
+
+class TrendingList(mixins.ListModelMixin, generics.GenericAPIView):
+    renderer_classes = [ApiRenderer]
+    queryset = Blog.objects.all().order_by('-id')
+    serializer_class = BlogSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class PopularList(mixins.ListModelMixin, generics.GenericAPIView):
+    renderer_classes = [ApiRenderer]
+    queryset = Blog.objects.all().order_by('-id')
+    serializer_class = BlogSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
