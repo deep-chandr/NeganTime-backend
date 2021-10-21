@@ -12,6 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from authentication.models import User
+from negantime.settings import AWS_S3_ACCESS_KEY_ID, AWS_S3_BUCKET, AWS_S3_REGION, AWS_S3_SECRET_ACCESS_KEY
 
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, RegistrationSerializer,
@@ -114,3 +115,16 @@ def verify_token(request):
         return Response(res_data, msg='Token verified successfully')
     except Exception as err:
         raise APIException("Invalid token")
+
+
+@api_view(["GET"])
+@renderer_classes([ApiRenderer, ])
+@permission_classes((IsAuthenticated,))
+def get_credential(request):
+    res_data = {
+        'AWS_S3_ACCESS_KEY_ID': AWS_S3_ACCESS_KEY_ID,
+        'AWS_S3_SECRET_ACCESS_KEY': AWS_S3_SECRET_ACCESS_KEY,
+        'AWS_S3_REGION': AWS_S3_REGION,
+        'AWS_S3_BUCKET': AWS_S3_BUCKET
+    }
+    return Response(res_data, msg='Success')
