@@ -3,7 +3,7 @@ from authentication.constants import MIN_PASSWORD_LENGTH
 from django_restql.mixins import DynamicFieldsMixin
 from rest_framework import serializers
 
-from .models import User
+from .models import Profile, User
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -94,6 +94,11 @@ class LoginSerializer(serializers.Serializer):
             'token': user.token
         }
 
+    def to_representation(self, instance):
+        data = super(LoginSerializer, self).to_representation(instance)
+        data['image'] = Profile.objects.get(user=instance['id']).image
+        return data
+
 
 class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
     """Handles serialization and deserialization of User objects."""
@@ -147,3 +152,15 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+    def to_representation(self, instance):
+        data = super(UserSerializer, self).to_representation(instance)
+        data['image'] = Profile.objects.get(user=instance.id).image
+        return data
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = '__all__'

@@ -11,11 +11,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 # from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authentication.models import User
+from authentication.models import Profile, User
 from negantime.settings import AWS_S3_ACCESS_KEY_ID, AWS_S3_BUCKET, AWS_S3_REGION, AWS_S3_SECRET_ACCESS_KEY
 
 from .renderers import UserJSONRenderer
-from .serializers import (LoginSerializer, RegistrationSerializer,
+from .serializers import (LoginSerializer, ProfileSerializer, RegistrationSerializer,
                           UserSerializer)
 
 
@@ -92,6 +92,9 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
             raise PermissionDenied()
 
         serializer_data = request.data.get('user', {})
+        profile_data = serializer_data.pop(
+            'profile') if 'profile' in serializer_data else {}
+
         if serializer_data['id'] != request.user.id:
             raise PermissionDenied()
 
@@ -102,6 +105,12 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        #  saving profile data
+        profile_serialized = ProfileSerializer(Profile.objects.get(
+            user=request.user), data=profile_data, partial=True)
+        profile_serialized.is_valid(raise_exception=True)
+        profile_serialized.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
