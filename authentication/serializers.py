@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from authentication.constants import MIN_PASSWORD_LENGTH
 from django_restql.mixins import DynamicFieldsMixin
+from django_restql.fields import DynamicSerializerMethodField
 from rest_framework import serializers
 
 from .models import Profile, User
@@ -113,8 +114,11 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         write_only=True
     )
 
+    # profile = DynamicSerializerMethodField()
+
     class Meta:
         model = User
+        # fields = '__all__'
         fields = ('id', 'email', 'username', 'password', 'token',)
 
         # The `read_only_fields` option is an alternative for explicitly
@@ -153,13 +157,26 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
 
         return instance
 
+    # def get_profile(self, instance, query):
+    #     profile_instance = Profile.objects.get(user=instance)
+    #     data = ProfileSerializer(
+    #         profile_instance, query=query, context=self.context).data
+    #     print('data-------------', data)
+    #     return data
+
+    def get_profile(self, user_id):
+        return Profile.objects.get(user=user_id)
+
     def to_representation(self, instance):
         data = super(UserSerializer, self).to_representation(instance)
-        data['image'] = Profile.objects.get(user=instance.id).image
+        profile = self.get_profile(instance.id)
+        data['image'] = profile.image
+        # data['user_followers'] = list(
+        #     profile.user_followers.all().values_list('id', flat=True))
         return data
 
 
-class ProfileSerializer(serializers.ModelSerializer):
+class ProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Profile

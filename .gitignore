@@ -2,3 +2,5 @@ env/
 negantime/.env
 
 .idea/
+
+.DS_Store

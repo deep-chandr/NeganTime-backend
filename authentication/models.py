@@ -157,7 +157,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Profile(models.Model):
     image = models.CharField(default='', max_length=1024)
-    user = models.ForeignKey(User,  on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    # people whom im following
+    user_followers = models.ManyToManyField(
+        User, related_name='user_followers')
 
     class Meta:
         db_table = 'profile'

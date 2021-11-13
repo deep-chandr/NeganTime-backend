@@ -2,11 +2,11 @@
 
 from authentication.constants import MIN_PASSWORD_LENGTH
 from negantime.drf_utils import ApiRenderer, Response
-from rest_framework import status
+from rest_framework import mixins, status
 from rest_framework.decorators import (api_view, permission_classes,
                                        renderer_classes)
 from rest_framework.exceptions import APIException, PermissionDenied
-from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 # from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -137,3 +137,35 @@ def get_credential(request):
         'AWS_S3_BUCKET': AWS_S3_BUCKET
     }
     return Response(res_data, msg='Success')
+
+
+class ProfileFollow(RetrieveUpdateAPIView):
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (ApiRenderer,)
+    serializer_class = ProfileSerializer
+
+    def get_object(self):
+        try:
+            return Profile.objects.get(user=self.request.user)
+        except Profile.DoesNotExist:
+            raise APIException('Profile not found')
+
+    def get(self, request):
+        profile = self.get_object()
+        data = list(profile.user_followers.all().values_list('id', flat=True))
+        return Response(data)
+
+    def update(self, request):
+        profile = self.get_object()
+        user_followers = request.data.pop('user_followers', [])
+        action = request.data.pop('action', None)
+        if action == 'add':
+            profile.user_followers.add(*user_followers)
+        elif action == 'remove':
+            profile.user_followers.remove(*user_followers)
+        else:
+            raise APIException('Invalid action')
+
+        # data = UserSerializer(profile.user_followers.all(), many=True).data
+        data = list(profile.user_followers.all().values_list('id', flat=True))
+        return Response(data)
