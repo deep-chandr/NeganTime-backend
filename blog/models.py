@@ -8,7 +8,7 @@ from negantime.models import BaseModel
 
 
 class Blog(BaseModel):
-    title = models.CharField(default='', max_length=128)
+    title = models.CharField(default='', max_length=1024)
     content = models.TextField(null=True, blank=True)
     images = ArrayField(models.CharField(
         max_length=2048), null=True, blank=True)

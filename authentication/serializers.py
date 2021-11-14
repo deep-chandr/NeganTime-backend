@@ -1,9 +1,11 @@
 from django.contrib.auth import authenticate
+from django.db.models import fields
 from authentication.constants import MIN_PASSWORD_LENGTH
 from django_restql.mixins import DynamicFieldsMixin
+from django_restql.fields import DynamicSerializerMethodField
 from rest_framework import serializers
 
-from .models import User
+from .models import Profile, User
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -30,6 +32,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Use the `create_user` method we wrote earlier to create a new user.
         return User.objects.create_user(**validated_data)
+
+    def to_representation(self, instance):
+        data = super(RegistrationSerializer,
+                     self).to_representation(instance)
+        data['profile'] = ProfileSerializer(
+            Profile.objects.get(user=instance)).data
+        return data
 
 
 class LoginSerializer(serializers.Serializer):
@@ -94,6 +103,12 @@ class LoginSerializer(serializers.Serializer):
             'token': user.token
         }
 
+    def to_representation(self, instance_json):
+        data = super(LoginSerializer, self).to_representation(instance_json)
+        data['profile'] = ProfileSerializer(
+            Profile.objects.get(user_id=instance_json['id'])).data
+        return data
+
 
 class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
     """Handles serialization and deserialization of User objects."""
@@ -107,43 +122,47 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'password', 'token',)
-
-        # The `read_only_fields` option is an alternative for explicitly
-        # specifying the field with `read_only=True` like we did for password
-        # above. The reason we want to use `read_only_fields` here is that
-        # we don't need to specify anything else about the field. The
-        # password field needed the `min_length` and
-        # `max_length` properties, but that isn't the case for the token
-        # field.
+        fields = ('id', 'email', 'username', 'password', 'profile', 'token',)
         read_only_fields = ('token',)
 
     def update(self, instance, validated_data):
         """Performs an update on a User."""
-
-        # Passwords should not be handled with `setattr`, unlike other fields.
-        # Django provides a function that handles hashing and
-        # salting passwords. That means
-        # we need to remove the password field from the
-        # `validated_data` dictionary before iterating over it.
         password = validated_data.pop('password', None)
 
         for (key, value) in validated_data.items():
-            # For the keys remaining in `validated_data`, we will set them on
-            # the current `User` instance one at a time.
             setattr(instance, key, value)
 
         if password is not None:
-            # `.set_password()`  handles all
-            # of the security stuff that we shouldn't be concerned with.
             instance.set_password(password)
 
-        # After everything has been updated we must explicitly save
-        # the model. It's worth pointing out that `.set_password()` does not
-        # save the model.
         instance.save()
-
         return instance
+
+    def get_profile(self, instance):
+        return ProfileSerializer(Profile.objects.get(user=instance)).data
+
+
+class UserSerializer2(DynamicFieldsMixin, serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'username', 'profile')
+
+    def get_profile(self, instance):
+        return ProfileSerializer(Profile.objects.get(user=instance)).data
+
+
+class ProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
+    subscriber_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = '__all__'
+
+    def get_subscriber_count(self, instance):
+        return instance.subscriber_count

@@ -35,6 +35,9 @@ class UserManager(BaseUserManager):
         user.set_password(password)
         user.save()
 
+        """create profile along with user"""
+        Profile.objects.create(user=user)
+
         return user
 
     def create_superuser(self, username, email, password):
@@ -150,3 +153,22 @@ class User(AbstractBaseUser, PermissionsMixin):
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token.decode('utf-8')
+
+
+class Profile(models.Model):
+    image = models.CharField(default='', max_length=1024)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    # people whom im following
+    user_followers = models.ManyToManyField(
+        User, related_name='user_followers')
+
+    class Meta:
+        db_table = 'profile'
+
+    def __str__(self):
+        return '%s' % self.user.username
+
+    @property
+    def subscriber_count(self):
+        return User.objects.filter(profile__user_followers=self.user_id).count()
