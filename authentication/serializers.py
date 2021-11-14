@@ -114,12 +114,12 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
-    # profile = DynamicSerializerMethodField()
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         # fields = '__all__'
-        fields = ('id', 'email', 'username', 'password', 'token',)
+        fields = ('id', 'email', 'username', 'password', 'profile', 'token',)
         read_only_fields = ('token',)
 
     def update(self, instance, validated_data):
@@ -135,8 +135,8 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def get_profile(self, user_id):
-        return Profile.objects.get(user=user_id)
+    def get_profile(self, instance):
+        return ProfileSerializer(Profile.objects.get(user=instance)).data
 
     def to_representation(self, instance):
         data = super(UserSerializer, self).to_representation(instance)
@@ -147,28 +147,28 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         return data
 
 
-class ProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
-    subscribers = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Profile
-        fields = '__all__'
-
-    def get_subscribers(self, instance):
-        return instance.subscriber_count
-
-
 class UserSerializer2(DynamicFieldsMixin, serializers.ModelSerializer):
-    user_profile = serializers.SerializerMethodField()
+    profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         # fields = '__all__'
-        fields = ('id', 'email', 'username', 'user_profile')
+        fields = ('id', 'email', 'username', 'profile')
 
-    def get_user_profile(self, instance):
+    def get_profile(self, instance):
         return ProfileSerializer(Profile.objects.get(user=instance)).data
 
     def to_representation(self, instance):
         data = super(UserSerializer2, self).to_representation(instance)
         return data
+
+
+class ProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
+    subscriber_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = '__all__'
+
+    def get_subscriber_count(self, instance):
+        return instance.subscriber_count
