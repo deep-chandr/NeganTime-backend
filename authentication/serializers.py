@@ -47,7 +47,6 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255, read_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
-    # profile = serializers.SerializerMethodField()
 
     def validate(self, data):
         # The `validate` method is where we make sure that the current
@@ -104,9 +103,6 @@ class LoginSerializer(serializers.Serializer):
             'token': user.token
         }
 
-    # def get_profile(self, instance):
-    #     return ProfileSerializer(Profile.objects.get(user_id=self.id)).data
-
     def to_representation(self, instance_json):
         data = super(LoginSerializer, self).to_representation(instance_json)
         data['profile'] = ProfileSerializer(
@@ -130,7 +126,6 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
 
     class Meta:
         model = User
-        # fields = '__all__'
         fields = ('id', 'email', 'username', 'password', 'profile', 'token',)
         read_only_fields = ('token',)
 
@@ -150,29 +145,16 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
     def get_profile(self, instance):
         return ProfileSerializer(Profile.objects.get(user=instance)).data
 
-    def to_representation(self, instance):
-        data = super(UserSerializer, self).to_representation(instance)
-        # profile = self.get_profile(instance.id)
-        # data['image'] = profile.image
-        # data['user_followers'] = list(
-        #     profile.user_followers.all().values_list('id', flat=True))
-        return data
-
 
 class UserSerializer2(DynamicFieldsMixin, serializers.ModelSerializer):
     profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        # fields = '__all__'
         fields = ('id', 'email', 'username', 'profile')
 
     def get_profile(self, instance):
         return ProfileSerializer(Profile.objects.get(user=instance)).data
-
-    def to_representation(self, instance):
-        data = super(UserSerializer2, self).to_representation(instance)
-        return data
 
 
 class ProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):

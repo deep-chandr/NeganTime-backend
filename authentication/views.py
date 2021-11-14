@@ -1,22 +1,21 @@
 
 
-from authentication.constants import MIN_PASSWORD_LENGTH
 from negantime.drf_utils import ApiRenderer, Response
+from negantime.settings import (AWS_S3_ACCESS_KEY_ID, AWS_S3_BUCKET,
+                                AWS_S3_REGION, AWS_S3_SECRET_ACCESS_KEY)
 from rest_framework import mixins, status
 from rest_framework.decorators import (api_view, permission_classes,
                                        renderer_classes)
 from rest_framework.exceptions import APIException, PermissionDenied
-from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
-# from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from authentication.constants import MIN_PASSWORD_LENGTH
 from authentication.models import Profile, User
-from negantime.settings import AWS_S3_ACCESS_KEY_ID, AWS_S3_BUCKET, AWS_S3_REGION, AWS_S3_SECRET_ACCESS_KEY
 
-from .renderers import UserJSONRenderer
-from .serializers import (LoginSerializer, ProfileSerializer, RegistrationSerializer,
-                          UserSerializer,
+from .serializers import (LoginSerializer, ProfileSerializer,
+                          RegistrationSerializer, UserSerializer,
                           UserSerializer2)
 
 
@@ -168,6 +167,5 @@ class ProfileFollow(RetrieveUpdateAPIView):
         else:
             raise APIException('Invalid action')
 
-        # data = UserSerializer(profile.user_followers.all(), many=True).data
         data = list(profile.user_followers.all().values_list('id', flat=True))
         return Response(data)
