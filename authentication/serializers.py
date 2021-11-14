@@ -33,6 +33,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         # Use the `create_user` method we wrote earlier to create a new user.
         return User.objects.create_user(**validated_data)
 
+    def to_representation(self, instance):
+        data = super(RegistrationSerializer,
+                     self).to_representation(instance)
+        data['profile'] = ProfileSerializer(
+            Profile.objects.get(user=instance)).data
+        return data
+
 
 class LoginSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -40,6 +47,7 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255, read_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
+    # profile = serializers.SerializerMethodField()
 
     def validate(self, data):
         # The `validate` method is where we make sure that the current
@@ -96,9 +104,13 @@ class LoginSerializer(serializers.Serializer):
             'token': user.token
         }
 
-    def to_representation(self, instance):
-        data = super(LoginSerializer, self).to_representation(instance)
-        # data['image'] = Profile.objects.get(user=instance['id']).image
+    # def get_profile(self, instance):
+    #     return ProfileSerializer(Profile.objects.get(user_id=self.id)).data
+
+    def to_representation(self, instance_json):
+        data = super(LoginSerializer, self).to_representation(instance_json)
+        data['profile'] = ProfileSerializer(
+            Profile.objects.get(user_id=instance_json['id'])).data
         return data
 
 

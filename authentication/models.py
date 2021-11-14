@@ -35,7 +35,7 @@ class UserManager(BaseUserManager):
         user.set_password(password)
         user.save()
 
-        # create profile along with user
+        """create profile along with user"""
         Profile.objects.create(user=user)
 
         return user
