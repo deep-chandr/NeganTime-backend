@@ -16,7 +16,8 @@ from negantime.settings import AWS_S3_ACCESS_KEY_ID, AWS_S3_BUCKET, AWS_S3_REGIO
 
 from .renderers import UserJSONRenderer
 from .serializers import (LoginSerializer, ProfileSerializer, RegistrationSerializer,
-                          UserSerializer)
+                          UserSerializer,
+                          UserSerializer2)
 
 
 class RegistrationAPIView(APIView):
@@ -81,6 +82,7 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         if username:
             try:
                 user = User.objects.get(username=username)
+                return Response(UserSerializer2(user).data)
             except User.DoesNotExist:
                 raise APIException('Invalid user')
 

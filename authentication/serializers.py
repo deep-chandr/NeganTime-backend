@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.db.models import fields
 from authentication.constants import MIN_PASSWORD_LENGTH
 from django_restql.mixins import DynamicFieldsMixin
 from django_restql.fields import DynamicSerializerMethodField
@@ -97,7 +98,7 @@ class LoginSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         data = super(LoginSerializer, self).to_representation(instance)
-        data['image'] = Profile.objects.get(user=instance['id']).image
+        # data['image'] = Profile.objects.get(user=instance['id']).image
         return data
 
 
@@ -113,71 +114,61 @@ class UserSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
-
     # profile = DynamicSerializerMethodField()
 
     class Meta:
         model = User
         # fields = '__all__'
         fields = ('id', 'email', 'username', 'password', 'token',)
-
-        # The `read_only_fields` option is an alternative for explicitly
-        # specifying the field with `read_only=True` like we did for password
-        # above. The reason we want to use `read_only_fields` here is that
-        # we don't need to specify anything else about the field. The
-        # password field needed the `min_length` and
-        # `max_length` properties, but that isn't the case for the token
-        # field.
         read_only_fields = ('token',)
 
     def update(self, instance, validated_data):
         """Performs an update on a User."""
-
-        # Passwords should not be handled with `setattr`, unlike other fields.
-        # Django provides a function that handles hashing and
-        # salting passwords. That means
-        # we need to remove the password field from the
-        # `validated_data` dictionary before iterating over it.
         password = validated_data.pop('password', None)
 
         for (key, value) in validated_data.items():
-            # For the keys remaining in `validated_data`, we will set them on
-            # the current `User` instance one at a time.
             setattr(instance, key, value)
 
         if password is not None:
-            # `.set_password()`  handles all
-            # of the security stuff that we shouldn't be concerned with.
             instance.set_password(password)
 
-        # After everything has been updated we must explicitly save
-        # the model. It's worth pointing out that `.set_password()` does not
-        # save the model.
         instance.save()
-
         return instance
-
-    # def get_profile(self, instance, query):
-    #     profile_instance = Profile.objects.get(user=instance)
-    #     data = ProfileSerializer(
-    #         profile_instance, query=query, context=self.context).data
-    #     print('data-------------', data)
-    #     return data
 
     def get_profile(self, user_id):
         return Profile.objects.get(user=user_id)
 
     def to_representation(self, instance):
         data = super(UserSerializer, self).to_representation(instance)
-        profile = self.get_profile(instance.id)
-        data['image'] = profile.image
+        # profile = self.get_profile(instance.id)
+        # data['image'] = profile.image
         # data['user_followers'] = list(
         #     profile.user_followers.all().values_list('id', flat=True))
         return data
 
 
 class ProfileSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
+    subscribers = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = '__all__'
+
+    def get_subscribers(self, instance):
+        return instance.subscriber_count
+
+
+class UserSerializer2(DynamicFieldsMixin, serializers.ModelSerializer):
+    user_profile = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        # fields = '__all__'
+        fields = ('id', 'email', 'username', 'user_profile')
+
+    def get_user_profile(self, instance):
+        return ProfileSerializer(Profile.objects.get(user=instance)).data
+
+    def to_representation(self, instance):
+        data = super(UserSerializer2, self).to_representation(instance)
+        return data

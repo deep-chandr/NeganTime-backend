@@ -1,4 +1,6 @@
 from rest_framework import generics, mixins
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.http import HttpResponse
 from negantime.drf_utils import ApiRenderer
@@ -50,6 +52,7 @@ class PopularList(mixins.ListModelMixin, generics.GenericAPIView):
     renderer_classes = [ApiRenderer]
     queryset = Blog.objects.all().order_by('-id')
     serializer_class = BlogSerializer
+    # permission_classes = (AllowAny,)
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -168,3 +168,7 @@ class Profile(models.Model):
 
     def __str__(self):
         return '%s' % self.user.username
+
+    @property
+    def subscriber_count(self):
+        return User.objects.filter(profile__user_followers=self.user_id).count()
