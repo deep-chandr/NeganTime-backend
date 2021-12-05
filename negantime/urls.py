@@ -15,9 +15,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.schemas import get_schema_view
+from rest_framework.documentation import include_docs_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('authentication.urls', namespace='authentication')),
+    path('docs/', include_docs_urls(title='Autodocs')),
+    path('schema/', get_schema_view(
+        title="negantime",
+        description="API Schema",
+        version="1.0.0"
+    ), name='openapi-schema'),
     path('', include('blog.urls')),
 ]
