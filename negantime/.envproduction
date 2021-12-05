@@ -13,4 +13,4 @@ AWS_S3_BUCKET=negantime
 
 DEBUG=False
 
-ALLOWED_HOSTS=['ec2-65-0-101-160.ap-south-1.compute.amazonaws.com', '65.0.101.160']
+ALLOWED_HOSTS=ec2-65-0-101-160.ap-south-1.compute.amazonaws.com 65.0.101.160 negantime.com www.negantime.com
